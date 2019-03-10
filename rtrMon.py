@@ -40,3 +40,5 @@ with open('./routers.json') as routers:
         responce.close()
 
 print(rtrResponce)
+
+# TODO: add support for .asp sites
