@@ -3,11 +3,11 @@
 # sys.argv[2] = host
 # sys.argv[3] = router
 
-import urllib.request as request
-import json
+# import urllib.request as request
+# import json
 import sys
 import os
-import subprocess
+import asyncio
 
 
 project = sys.argv[1]
@@ -27,21 +27,30 @@ if os.name == 'nt':
 
 
 # perform a ping test
-def ping(host):
-    if posix:
-        output = subprocess.run(['ping', '-c', '1', host], capture_output=True)
-    else:
-        output = subprocess.run(['ping', '-n', '20', host], capture_output=True)
-    return str(output)[str(output).find('---'):str(output).find('stderr') - 3]
+async def ping(host):
+    pingProc = await asyncio.create_subprocess_shell('ping -c 20 ' + host,
+                                                     stdout=asyncio.subprocess.PIPE,
+                                                     stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await pingProc.communicate()
+    if stdout:
+        output = stdout.decode()
+        print(output[:output.find('data.') + 5])
+        print(output[output.find('---'):])
 
 
 # perform a traceroute
-def traceRoute(host):
+async def traceRoute(host):
     if posix:
-        output = subprocess.run(['traceroute', host], capture_output=True)
+        traceProc = await asyncio.create_subprocess_shell('traceroute ' + host,
+                                                          stdout=asyncio.subprocess.PIPE,
+                                                          stderr=asyncio.subprocess.PIPE)
     else:
-        output = subprocess.run(['tracert', host], capture_output=True)
-    return str(output)[str(output).find('stdout') + 9:str(output).find('stderr') - 3]
+        traceProc = await asyncio.create_subprocess_shell('tracert ' + host,
+                                                          stdout=asyncio.subprocess.PIPE,
+                                                          stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await traceProc.communicate()
+    if stdout:
+        print(stdout.decode())
 
 
 # # pull login info from json file.
@@ -69,7 +78,10 @@ def traceRoute(host):
 #         responce.close()
 
 
-# for line in ping(host).split('\\n'):
-#     print(line)
-for line in traceRoute(host).split('\\n'):
-    print(line)
+async def main():
+    await asyncio.gather(
+        ping(host),
+        traceRoute(host)
+    )
+
+asyncio.run(main())
