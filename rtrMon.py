@@ -8,18 +8,10 @@
 import sys
 import os
 import asyncio
+import requests
 
-
-project = sys.argv[1]
-host = sys.argv[2]
-router = sys.argv[3]
-username = ''
-password = ''
-adminpwd = ''
-rtrResponce = ''
 posix = True
-pingResponce = ''
-traceRouteResponce = ''
+
 
 # test what OS this is run on.
 if os.name == 'nt':
@@ -77,11 +69,34 @@ async def traceRoute(host):
 #         rtrResponce = responce.read()  # testing reply
 #         responce.close()
 
+def credsLookup():
+    pass
+
+
+def routerGrep(host, creds):
+    result = scrape(host, creds)
+    pass
+
+
+def scrape(host, creds):
+    user = creds[0]
+    psswd = creds[1]
+    s = requests.Session()
+    resp = s.get(host, auth=requests.auth.HTTPBasicAuth(user, psswd))
+    print(resp.text)
+
 
 async def main():
+    project = sys.argv[1]
+    host = sys.argv[2]
+    router = sys.argv[3]
+    creds = credsLookup(project)
     await asyncio.gather(
         ping(host),
-        traceRoute(host)
+        traceRoute(host),
+        routerGrep(host, creds)
     )
 
-asyncio.run(main())
+
+if __name__ == '__main__':
+    asyncio.run(main())
